@@ -17,9 +17,15 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
+    - name: Checkout state branch
+      uses: actions/checkout@v3
+      with:
+        ref: state
+        path: state
+
     - name: Set variables
       run: |
-        current_version=$(cat currentenv)
+        current_version=$(cat state/dev_env)
         echo "VERSION=$current_version" >> $GITHUB_ENV
 
     - name: azure login
