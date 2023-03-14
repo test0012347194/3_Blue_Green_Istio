@@ -1,1 +1,0 @@
-# 3_Blue_Green_Istio
