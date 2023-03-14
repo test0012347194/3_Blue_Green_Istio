@@ -1,0 +1,78 @@
+name: 'Deploy'
+
+on: 
+  push: 
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: 'Deploy'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Checkout state branch
+      uses: actions/checkout@v3
+      with:
+        ref: state
+        path: state
+
+    - name: Set variables
+      run: |
+        current_version=$(cat state/prod_env)
+        echo "CURRENT_VERSION=$current_version" >> $GITHUB_ENV
+
+    - name: blue
+      if: env.CURRENT_VERSION == 'blue'
+      run: |
+        echo "green" > state/prod_env
+        echo "blue" > state/dev_env
+        echo "VERSION=green" >> $GITHUB_ENV
+
+    - name: green
+      if: env.CURRENT_VERSION == 'green'
+      run: |
+        echo "blue" > state/prod_env
+        echo "green" > state/dev_env
+        echo "VERSION=blue" >> $GITHUB_ENV
+
+    - name: azure login
+      uses: azure/login@v1
+      with:
+         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: set aks context
+      uses: azure/aks-set-context@v3
+      with:
+         resource-group: 'rg_assignment'
+         cluster-name: 'aksassignment'
+
+    - name: deploy manifest
+      uses: Azure/k8s-deploy@v4
+      with:
+         action: deploy
+         namespace: bluegreen
+         manifests: |
+            istio/Virtual_service_${{ env.VERSION }}.yml
+         strategy: basic
+         
+    - name: Commit file to state
+      working-directory: ./state
+      run: |
+        git config --local user.email "pomtest001@outlook.com"
+        git config --local user.name "test0012347194"
+        git add .
+        git commit -m "change bluegreen env"
+
+    - name: Push changes to state
+      uses: ad-m/github-push-action@v0.6.0
+      with:
+        branch: state
+        directory: ./state
+        github_token: ${{ secrets.ACCESS_TOKEN }}	

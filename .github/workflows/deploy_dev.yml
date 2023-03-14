@@ -1,0 +1,46 @@
+name: 'Deploy'
+
+on: 
+  push: 
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    name: 'Deploy'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Set variables
+      run: |
+        current_version=$(cat currentenv)
+        echo "VERSION=$current_version" >> $GITHUB_ENV
+
+    - name: azure login
+      uses: azure/login@v1
+      with:
+         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: set aks context
+      uses: azure/aks-set-context@v3
+      with:
+         resource-group: 'rg_assignment'
+         cluster-name: 'aksassignment'
+
+    - name: deploy manifest
+      uses: Azure/k8s-deploy@v4
+      with:
+         action: deploy
+         namespace: bluegreen
+         manifests: |
+            k8s/deployment_${{ env.VERSION }}.yml
+            k8s/service.yml
+            istio/Destination_rule_blue_green.yml
+            istio/gateway.yml
+         strategy: basic

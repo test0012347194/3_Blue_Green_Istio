@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: blue-green
+  namespace: bluegreen
+spec:
+  host: blue-green
+  subsets:
+  - name: version-blue
+    labels:  
+      version: blue
+  - name: version-green
+    labels:
+      version: green
