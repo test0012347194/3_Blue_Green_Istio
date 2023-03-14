@@ -23,7 +23,7 @@ jobs:
         ref: state
         path: state
 
-    - name: Set variables
+    - name: Set variables 
       run: |
         current_version=$(cat state/dev_env)
         echo "VERSION=$current_version" >> $GITHUB_ENV
